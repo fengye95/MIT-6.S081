@@ -6,6 +6,29 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
+
+extern uint64 get_freemem();
+extern uint64 get_nporc();
+
+uint64
+sys_sysinfo(void){
+  uint64 user_addr;
+  struct sysinfo sysinfo;
+
+  if(argaddr(0, &user_addr) < 0)
+    return -1;
+
+  // 填充属性
+  sysinfo.freemem = get_freemem();
+  sysinfo.nproc = get_nporc();
+
+  if(either_copyout(1, user_addr, (char *)&sysinfo, sizeof(sysinfo)) < 0)
+    return -1;
+
+  return 0;
+}
+
 
 uint64
 sys_trace(void){

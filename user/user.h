@@ -26,6 +26,7 @@ int uptime(void);
 
 // 添加系统调用
 int trace(int);
+int sysinfo(void *);
 
 // ulib.c
 int stat(const char*, struct stat*);
