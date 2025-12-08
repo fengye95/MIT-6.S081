@@ -105,4 +105,11 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  int alarm_is_set;            // 定时器是否已设置(禁用当且仅当 alarm_interval = 0 && alarm_handler = 0)
+  int alarm_interval;          // 触发间隔（ticks数）
+  uint64 alarm_handler;        // 用户处理函数地址（不是函数指针）
+  int alarm_ticks_left;        // 距离下次触发的剩余ticks
+  struct trapframe alarm_trapframe;  // 保存的寄存器状态
+  int alarm_goingoff;      // 是否正在处理（防重入）
 };
