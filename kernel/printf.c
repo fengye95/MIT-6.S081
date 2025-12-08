@@ -132,3 +132,21 @@ printfinit(void)
   initlock(&pr.lock, "pr");
   pr.locking = 1;
 }
+
+void 
+backtrace(void)
+{
+  // 当前栈的指针
+  uint64 fp = r_fp();
+  
+  uint64 PAGE_START = PGROUNDDOWN(fp);
+  uint64 PAGE_END   = PGROUNDUP(fp);
+  
+  printf("backtrace:\n");
+  while (PAGE_START <= fp && fp < PAGE_END) {
+    // 当前栈结束的下一条内核指令地址
+    uint64 ra = *(uint64*)(fp - 8);
+    printf("%p\n", ra);
+    fp = *(uint64*) (fp - 16);
+  }
+}
