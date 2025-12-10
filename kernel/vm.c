@@ -466,7 +466,10 @@ int handle_cow(pagetable_t pagetable, uint64 va) {
     return -1;
   }
 
-  uint64 pa = PTE2PA(*pte);
+  uint64 pa = walkaddr(pagetable, va);
+  if (pa == 0) {
+    return -1;
+  }
 
   acquire_page_lock();
   int refcnt = get_refcnt(pa);

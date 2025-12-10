@@ -190,3 +190,4 @@ void release_page_lock();
 void inc_refcnt(uint64 pa) ;
 void dec_refcnt(uint64 pa) ;
 int get_refcnt(uint64 pa);
+int handle_cow(pagetable_t pagetable, uint64 va);
