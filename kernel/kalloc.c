@@ -23,6 +23,55 @@ struct {
   struct run *freelist;
 } kmem;
 
+struct {
+  struct spinlock lock;
+  int refcnt[(PHYSTOP - KERNBASE)/PGSIZE];
+} page;
+
+void pageinit(void)
+{
+  initlock(&page.lock, "page");
+  for(int i = 0; i < (PHYSTOP - KERNBASE)/PGSIZE; i++) {
+    page.refcnt[i] = 0;
+  }
+}
+
+int pa_in_ram(uint64 pa) {
+  return KERNBASE <= pa && pa < PHYSTOP;
+}
+
+void acquire_page_lock() {
+  acquire(&page.lock);
+}
+
+void release_page_lock() {
+  release(&page.lock);
+}
+
+void inc_refcnt(uint64 pa) {
+  if (!pa_in_ram(pa)) {
+    panic("inc_refcnt: pa not in ram");
+  }
+  int index = (pa - KERNBASE) / PGSIZE;
+  page.refcnt[index]++;
+}
+
+void dec_refcnt(uint64 pa) {
+  if (!pa_in_ram(pa)) {
+    panic("dec_refcnt: pa not in ram");
+  }
+  int index = (pa - KERNBASE) / PGSIZE;
+  page.refcnt[index]--;
+}
+
+void get_refcnt(uint64 pa) {
+  if (!pa_in_ram(pa)) {
+    panic("get_refcnt: pa not in ram");
+  }
+  int index = (pa - KERNBASE) / PGSIZE;
+  return page.refcnt[index];
+}
+
 void
 kinit()
 {
