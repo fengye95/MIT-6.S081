@@ -360,6 +360,20 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
+
+    pte_t *pte = walk(pagetable, va0, 0);
+    if (pte == 0 || ((*pte & PTE_V) == 0) || ((*pte & PTE_U) == 0))
+      return -1;
+
+    if (*pte & PTE_COW) {
+      if (handle_cow(pagetable, va0) < 0) {
+        return -1;
+      }
+      pa0 = walkaddr(pagetable, va0);
+      if (pa0 == 0)
+        return -1;
+    }
+
     n = PGSIZE - (dstva - va0);
     if(n > len)
       n = len;
