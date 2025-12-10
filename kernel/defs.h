@@ -184,3 +184,9 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+void acquire_page_lock() ;
+void release_page_lock();
+void inc_refcnt(uint64 pa) ;
+void dec_refcnt(uint64 pa) ;
+int get_refcnt(uint64 pa);
