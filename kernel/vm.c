@@ -453,3 +453,50 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+int handle_cow(pagetable_t pagetable, uint64 va) {
+  if (va >= MAXVA) {
+    return -1;
+  }
+  pte_t *pte = walk(pagetable, va, 0);
+  if (pte == 0) {
+    return -1;
+  }
+  if (!(*pte & PTE_COW)) {
+    return -1;
+  }
+
+  uint64 pa = PTE2PA(*pte);
+
+  acquire_page_lock();
+  int refcnt = get_refcnt(pa);
+  if (refcnt < 1) {
+    release_page_lock();
+    return -1;
+  }
+
+  if (refcnt == 1) {
+    // 只有一个引用，直接恢复写权限
+    *pte = (*pte & ~PTE_COW) | PTE_W;
+    release_page_lock();
+    return 0;
+  }
+
+  // 多个引用，复制一份物理页
+  char *mem = kalloc();
+  if (mem == 0) {
+    release_page_lock();
+    return -1;
+  }
+  memmove(mem, (char*)pa, PGSIZE);
+
+  // 更新页表项
+  *pte = PA2PTE((uint64)mem) | (PTE_FLAGS(*pte) & ~PTE_COW) | PTE_W;
+
+  // 更新引用计数
+  dec_refcnt(pa);
+  release_page_lock();
+
+
+  return 0;
+}
