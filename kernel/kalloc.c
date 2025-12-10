@@ -64,7 +64,7 @@ void dec_refcnt(uint64 pa) {
   page.refcnt[index]--;
 }
 
-void get_refcnt(uint64 pa) {
+int get_refcnt(uint64 pa) {
   if (!pa_in_ram(pa)) {
     panic("get_refcnt: pa not in ram");
   }
@@ -77,6 +77,7 @@ kinit()
 {
   initlock(&kmem.lock, "kmem");
   freerange(end, (void*)PHYSTOP);
+  pageinit();
 }
 
 void
@@ -99,6 +100,14 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
+
+  acquire_page_lock();
+  dec_refcnt((uint64)pa);
+  if (get_refcnt((uint64)pa) > 0) {
+    release_page_lock();
+    return;
+  }
+  release_page_lock();
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
@@ -124,6 +133,9 @@ kalloc(void)
   if(r)
     kmem.freelist = r->next;
   release(&kmem.lock);
+
+  if(r) 
+    page.refcnt[((uint64)r - KERNBASE) / PGSIZE] = 1;
 
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
