@@ -80,8 +80,18 @@ sys_sleep(void)
 int
 sys_pgaccess(void)
 {
-  // lab pgtbl: your code here.
-  return 0;
+  uint64 first_user_page_addr;
+  int num_pages;
+  uint64 user_bitmap_addr;
+
+  if(argaddr(0, &first_user_page_addr) < 0)
+    return -1;
+  if(argint(1, &num_pages) < 0)
+    return -1;
+  if(argaddr(2, &user_bitmap_addr) < 0)
+    return -1;
+
+  return pgaccess(myproc()->pagetable, first_user_page_addr, num_pages, user_bitmap_addr);
 }
 #endif
 

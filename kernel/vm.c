@@ -457,3 +457,37 @@ vmprint(pagetable_t pagetable) {
 
   vmprint_helper(pagetable, 0);
 }
+
+int 
+pgaccess(pagetable_t pagetable, uint64 first_user_page_addr, 
+          int num_pages, uint64 user_bitmap_addr) {
+  uint64 va;
+  pte_t *pte;
+  uint64 bitmap = 0; // 可以存储最多64页的访问情况
+
+  for (int i = 0; i < num_pages; i++) {
+    va = first_user_page_addr + i * PGSIZE;
+    if (va >= MAXVA) {
+      return -1; // 超出最大虚拟地址范围
+    }
+
+    pte = walk(pagetable, va, 0);
+    if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0) {
+      continue; // 页表项不存在或无效或不可用户访问
+    }
+
+    if ((*pte & PTE_A) != 0) {
+      // Accessed bit is set
+      bitmap |= (1ULL << i);
+      // Clear the accessed bit
+      *pte &= ~PTE_A;
+    }
+  }
+
+  // Copy the bitmap to user space
+  if (copyout(pagetable, user_bitmap_addr, (char *)&bitmap, sizeof(bitmap)) < 0) {
+    return -1;
+  }
+
+  return 0;
+}

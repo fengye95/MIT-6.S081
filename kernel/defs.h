@@ -186,3 +186,4 @@ void            virtio_disk_intr(void);
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
 void vmprint(pagetable_t pagetable) ;
+int pgaccess(pagetable_t, uint64, int, uint64) ;
