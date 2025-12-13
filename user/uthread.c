@@ -10,10 +10,30 @@
 #define STACK_SIZE  8192
 #define MAX_THREAD  4
 
+struct context {
+    uint64 ra;
+    uint64 sp;
+    uint64 s0;  // fp
+    uint64 s1;
+    uint64 s2;
+    uint64 s3;
+    uint64 s4;
+    uint64 s5;
+    uint64 s6;
+    uint64 s7;
+    uint64 s8;
+    uint64 s9;
+    uint64 s10;
+    uint64 s11;
+    // 不保存：a0-a7, t0-t6（caller-saved）
+    // 不保存：gp, tp（全局/线程，线程内不变）
+    // zero 不用保存
+};
 
 struct thread {
   char       stack[STACK_SIZE]; /* the thread's stack */
   int        state;             /* FREE, RUNNING, RUNNABLE */
+  struct context context;       // 线程上下文 ⬅️ 新增
 };
 struct thread all_thread[MAX_THREAD];
 struct thread *current_thread;
@@ -58,10 +78,8 @@ thread_schedule(void)
     next_thread->state = RUNNING;
     t = current_thread;
     current_thread = next_thread;
-    /* YOUR CODE HERE
-     * Invoke thread_switch to switch from t to next_thread:
-     * thread_switch(??, ??);
-     */
+    // 正确调用 thread_switch
+     thread_switch((uint64)&t->context, (uint64)&next_thread->context);
   } else
     next_thread = 0;
 }
@@ -76,6 +94,17 @@ thread_create(void (*func)())
   }
   t->state = RUNNABLE;
   // YOUR CODE HERE
+  // 初始化上下文
+  // 1. 初始化全部寄存器为 0
+  uint64 *ctx_ptr = (uint64*)&t->context;
+  for(int i = 0; i < sizeof(struct context)/sizeof(uint64); i++) 
+      ctx_ptr[i] = 0;
+  
+  // 2. 栈指针指向栈顶（栈从高地址向低地址增长）
+  t->context.sp = (uint64)&t->stack[STACK_SIZE];
+    
+  // 3. 返回地址设置为线程入口函数
+  t->context.ra = (uint64)func;
 }
 
 void 
