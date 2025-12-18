@@ -110,6 +110,7 @@ extern uint64 sys_connect(void);
 #ifdef LAB_PGTBL
 extern uint64 sys_pgaccess(void);
 #endif
+extern uint64 sys_pagetable(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -139,6 +140,7 @@ static uint64 (*syscalls[])(void) = {
 #ifdef LAB_PGTBL
 [SYS_pgaccess] sys_pgaccess,
 #endif
+[SYS_pagetable] sys_pagetable,
 };
 
 
